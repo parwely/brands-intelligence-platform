@@ -1,142 +1,88 @@
+# docker-compose.dev.yml - KOSTENLOSE Demo Version
 version: '3.8'
 
 services:
-  # PostgreSQL Datenbank
+  # Database Services (nur PostgreSQL für Demo)
   postgres:
-    image: postgres:15-alpine
-    container_name: brand-postgres
-    restart: unless-stopped
+    image: postgres:15
     environment:
       POSTGRES_DB: brand_intelligence
       POSTGRES_USER: branduser
       POSTGRES_PASSWORD: brandpass123
-      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U branduser -d brand_intelligence"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: brand-redis
-    restart: unless-stopped
     ports:
       - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Elasticsearch für Textsuche
-  elasticsearch:
-    image: elasticsearch:8.11.0
-    container_name: brand-elasticsearch
-    restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.enrollment.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # Optional: SQLite als ClickHouse Alternative für Demo
+  # clickhouse:
+  #   image: clickhouse/clickhouse-server:latest
+  #   ports:
+  #     - "9000:9000"
+  #     - "8123:8123"
+  #   volumes:
+  #     - clickhouse_data:/var/lib/clickhouse
 
-  # ClickHouse für Analytics
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    container_name: brand-clickhouse
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "8123:8123"
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    environment:
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # Optional: Elasticsearch für Demo (kann auch weggelassen werden)
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
 
   # Backend API
   backend:
-    build:
+    build: 
       context: ./backend
       dockerfile: Dockerfile
-    container_name: brand-backend
-    restart: unless-stopped
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://branduser:brandpass123@postgres:5432/brand_intelligence
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CLICKHOUSE_URL=clickhouse://clickhouse:9000/default
+      - DEBUG=true
+    volumes:
+      - ./backend:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
+        condition: service_started
       elasticsearch:
-        condition: service_healthy
-    environment:
-      - DEBUG=true
-      - DATABASE_URL=postgresql+asyncpg://branduser:brandpass123@postgres:5432/brand_intelligence
-      - REDIS_URL=redis://redis:6379/0
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - CLICKHOUSE_URL=clickhouse://clickhouse:9000/default
-    volumes:
-      - ./backend:/app
-      - backend_logs:/app/logs
+        condition: service_started
+      clickhouse:
+        condition: service_started
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Frontend (React)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: brand-frontend
-    restart: unless-stopped
     ports:
       - "3000:3000"
-    depends_on:
-      - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - REACT_APP_API_URL=http://localhost:8000
-    command: npm start
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
-  elasticsearch_data:
-    driver: local
   clickhouse_data:
-    driver: local
-  backend_logs:
-    driver: local
-
-networks:
-  default:
-    name: brand-intelligence-network
+  elasticsearch_data:

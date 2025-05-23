@@ -3,7 +3,8 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from .core.config import settings
-from .api import brands, mentions, analytics
+from .api import brands, mentions, analytics, demo
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -26,6 +27,8 @@ app.add_middleware(
 app.include_router(brands.router, prefix="/api/brands", tags=["brands"])
 app.include_router(mentions.router, prefix="/api/mentions", tags=["mentions"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+
+app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
 
 @app.get("/")
 async def root():

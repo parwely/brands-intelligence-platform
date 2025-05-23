@@ -1,8 +1,9 @@
-# backend/app/models/mention.py
-from sqlalchemy import Column, String, DateTime, Text, Float, ForeignKey
+from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime
+
 from ..core.database import Base
 
 class Mention(Base):
@@ -11,18 +12,29 @@ class Mention(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     brand_id = Column(UUID(as_uuid=True), ForeignKey("brands.id"), nullable=False)
     
-    # Content
-    platform = Column(String(20), nullable=False)  # twitter, reddit, news
+    # Content fields
     content = Column(Text, nullable=False)
-    url = Column(String(500))
-    author = Column(String(100))
+    title = Column(String(500))
+    url = Column(String(1000))
+    author = Column(String(255))
+    platform = Column(String(100), nullable=False)  # twitter, facebook, instagram, etc.
     
-    # Analysis Results
-    sentiment_score = Column(Float)  # -1 to 1
-    crisis_probability = Column(Float)  # 0 to 1
-    influence_score = Column(Float)  # 0 to 1
+    # Timestamps
+    published_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Metadata
-    published_at = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    processed_at = Column(DateTime(timezone=True))
+    # Analysis fields
+    sentiment_score = Column(Float)  # -1 to 1 (negative to positive)
+    sentiment_label = Column(String(20))  # positive, negative, neutral
+    emotion_scores = Column(Text)  # JSON string of emotion analysis
+    crisis_probability = Column(Float, default=0.0)  # 0 to 1
+    
+    # Engagement metrics
+    likes_count = Column(Integer, default=0)
+    shares_count = Column(Integer, default=0)
+    comments_count = Column(Integer, default=0)
+    reach = Column(Integer, default=0)
+    
+    # Relationships
+    brand = relationship("Brand", back_populates="mentions")
