@@ -1,0 +1,82 @@
+# docker-compose.dev.yml
+
+services:
+  # Database Services (nur PostgreSQL für Demo)
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: brand_intelligence
+      POSTGRES_USER: branduser
+      POSTGRES_PASSWORD: brandpass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U branduser -d brand_intelligence"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # Optional: SQLite als ClickHouse Alternative für Demo
+  # clickhouse:
+  #   image: clickhouse/clickhouse-server:latest
+  #   ports:
+  #     - "9000:9000"
+  #     - "8123:8123"
+  #   volumes:
+  #     - clickhouse_data:/var/lib/clickhouse
+
+  # Optional: Elasticsearch für Demo (kann auch weggelassen werden)
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+
+  # Backend API
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://branduser:brandpass123@postgres:5432/brand_intelligence
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CLICKHOUSE_URL=clickhouse://clickhouse:9000/default
+      - DEBUG=true
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+  elasticsearch_data:
