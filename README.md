@@ -101,36 +101,37 @@ Kafka Producers → Kafka Streams → Spark ML → ClickHouse → FastAPI → Re
 
 1. Executive Dashboard:
 
-Brand Health Score (0-100)
-Crisis Risk Level (Green/Yellow/Red)
-Sentiment Trend (7/30/90 days)
-Competitive Landscape
-ROI Metrics
+- Brand Health Score (0-100)
+- Crisis Risk Level (Green/Yellow/Red)
+- Sentiment Trend (7/30/90 days)
+- Competitive Landscape
+- ROI Metrics
 
 2. Crisis Command Center:
 
-Real-time Alert Feed
-Crisis Severity Classification
-Response Recommendation Engine
-Stakeholder Notification Panel
-Response Tracking
+- Real-time Alert Feed
+- Crisis Severity Classification
+- Response Recommendation Engine
+- Stakeholder Notification Panel
+- Response Tracking
 
 3. Competitive Intelligence:
 
-Market Share of Voice
-Competitor Crisis Opportunities
-Campaign Performance Analysis
-Influencer Mapping
-Trend Identification
+- Market Share of Voice
+- Competitor Crisis Opportunities
+- Campaign Performance Analysis
+- Influencer Mapping
+- Trend Identification
 
 4. Analyst Workbench:
 
-Deep-dive Text Analysis
-Custom Query Builder
-Data Export Tools
-Model Performance Metrics
-A/B Testing Framework
+- Deep-dive Text Analysis
+- Custom Query Builder
+- Data Export Tools
+- Model Performance Metrics
+- A/B Testing Framework
 
+##Production Timeline (maybeee)
 Phase 1: Foundation (Weeks 1-4)
 ```
 # Setup core infrastructure
@@ -168,3 +169,41 @@ Phase 4: Production Ready (Weeks 13-16)
 ├── Performance optimization
 └── Security hardening
 ```
+
+##🏗️ Technologie-Stack (Industry Standard)
+
+#Data Engineering & Storage:
+- Apache Kafka: Real-time Data Streaming
+- PostgreSQL: Transaktionale Daten (Users, Brands, Settings)
+- ClickHouse: Time-series Analytics (fast aggregations)
+- Elasticsearch: Full-text Search & Indexing
+- Apache Airflow: ETL Orchestration
+- Redis: Caching & Real-time Features
+
+#Machine Learning & NLP:
+- Python: Core ML/NLP Development
+- Transformers/Hugging Face: BERT, RoBERTa für Classification
+- spaCy: Named Entity Recognition
+- scikit-learn: Traditional ML
+- MLflow: ML Model Management
+- Apache Spark: Distributed ML Processing
+
+Backend & APIs:
+- FastAPI: High-performance API
+- AsyncIO: Concurrent processing
+- Celery: Background job processing
+- WebSockets: Real-time notifications
+
+Frontend:
+- React/TypeScript: Modern Dashboard
+- Next.js: SSR for performance
+- TailwindCSS: Styling
+- Chart.js/D3.js: Advanced visualizations
+- Socket.io: Real-time updates
+
+DevOps & Infrastructure:
+- Docker & Kubernetes: Container orchestration
+- GitHub Actions: CI/CD Pipeline
+- Terraform: Infrastructure as Code
+- Prometheus/Grafana: Monitoring
+- AWS/GCP: Cloud deployment
