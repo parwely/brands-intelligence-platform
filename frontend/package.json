@@ -1,7 +1,22 @@
 {
-  "name": "brand-crisis-dashboard",
-  "version": "0.1.0",
-  "private": true,
+  "name": "brand-intelligence-platform-frontend",
+  "version": "1.0.0",
+  "description": "Frontend dashboard for Brand Intelligence Platform - Real-time brand monitoring with AI-powered crisis detection",
+  "license": "MIT",
+  "author": "Mira Speier <mira.speier@web.de>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parwely/brand-intelligence-platform.git"
+  },
+  "homepage": "https://github.com/parwely/brand-intelligence-platform#readme",
+  "keywords": [
+    "brand-monitoring",
+    "sentiment-analysis",
+    "crisis-detection",
+    "dashboard",
+    "react",
+    "nextjs"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
