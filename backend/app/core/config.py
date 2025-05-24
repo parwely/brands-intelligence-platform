@@ -1,29 +1,25 @@
 # backend/app/core/config.py
+import os
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 class Settings(BaseSettings):
-    # Application
     app_name: str = "Brand Intelligence Platform"
-    debug: bool = False
-    version: str = "0.1.0"
+    version: str = "1.0.0"
+    debug: bool = True
     
-    # Database
-    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/brand_intelligence"
-    clickhouse_url: str = "clickhouse://localhost:9000/default"
-    redis_url: str = "redis://localhost:6379"
+    # Required fields with defaults for development
+    secret_key: str = "default-dev-secret-key-change-in-production"
+    database_url: str = "sqlite+aiosqlite:///./brand_intelligence.db"
+    
+    # Optional services
+    redis_url: str = "redis://localhost:6379/0"
     elasticsearch_url: str = "http://localhost:9200"
-    
-    # Security
-    secret_key: str = "your-secret-key-change-in-production"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    clickhouse_url: str = "http://localhost:8123"
+    use_redis: bool = True
     
     # API Keys
-    twitter_bearer_token: Optional[str] = None
-    twitter_api_key: Optional[str] = None
-    twitter_api_secret: Optional[str] = None
-    news_api_key: Optional[str] = None
+    news_api_key: str = ""
+    googlenews_query: str = ""
     
     # ML Models
     sentiment_model_path: str = "./ml/models/sentiment_model"
@@ -31,5 +27,6 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        env_file_encoding = 'utf-8'
 
 settings = Settings()

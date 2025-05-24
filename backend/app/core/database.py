@@ -1,22 +1,26 @@
-# backend/app/core/database.py - Production Ready Version
+# backend/app/core/database.py
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from typing import AsyncGenerator
-import redis.asyncio as redis
-from elasticsearch import AsyncElasticsearch
-from clickhouse_driver import Client
+from typing import AsyncGenerator, Optional, Union
 import logging
 from .config import settings
 
 logger = logging.getLogger(__name__)
 
-# PostgreSQL (Main Database)
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,  # SQL logging in debug mode
-    pool_size=20,
-    max_overflow=0
-)
+# Create engine with SQLite-compatible settings
+if "sqlite" in settings.database_url.lower():
+    engine = create_async_engine(
+        settings.database_url,
+        echo=settings.debug,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_async_engine(
+        settings.database_url,
+        echo=settings.debug,
+        pool_size=20,
+        max_overflow=0
+    )
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
@@ -26,16 +30,34 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
-# Redis (Async version for better performance)
-redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+# Optional services with specific types
+redis_client = None  # Will be redis.Redis or None
+es_client = None     # Will be AsyncElasticsearch or None  
+clickhouse_client = None  # Will be Client or None
 
-# Elasticsearch
-es_client = AsyncElasticsearch([settings.elasticsearch_url])
+if settings.use_redis:
+    try:
+        import redis.asyncio as redis
+        redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+        logger.info("Redis client initialized")
+    except Exception as e:
+        logger.warning(f"Redis not available: {e}")
 
-# ClickHouse
-clickhouse_client = Client.from_url(settings.clickhouse_url)
+try:
+    from elasticsearch import AsyncElasticsearch
+    es_client = AsyncElasticsearch([settings.elasticsearch_url])
+    logger.info("Elasticsearch client initialized")
+except Exception as e:
+    logger.warning(f"Elasticsearch not available: {e}")
 
-# Database Dependency with proper error handling
+try:
+    from clickhouse_driver import Client
+    clickhouse_client = Client.from_url(settings.clickhouse_url)
+    logger.info("ClickHouse client initialized")
+except Exception as e:
+    logger.warning(f"ClickHouse not available: {e}")
+
+# Database Dependency
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
@@ -47,7 +69,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
-# Health check functions
+# Health check function
 async def check_database_health() -> bool:
     """Check if database is accessible"""
     try:

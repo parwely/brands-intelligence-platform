@@ -1,36 +1,35 @@
-// frontend/src/app/page.tsx
-'use client'
-import React, { useEffect, useState } from 'react'
-import { DashboardLayout } from '../src/components/layout/DashboardLayout';
-import { apiService, Brand, Mention } from '@/services/api'
+// frontend/app/page.tsx
+'use client';
+
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useEffect, useState } from 'react';
+import { apiService, Brand, Mention } from '@/services/api';
 
 export default function Dashboard() {
-  const [brands, setBrands] = useState<Brand[]>([])
-  const [mentions, setMentions] = useState<Mention[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [mentions, setMentions] = useState<Mention[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [brandsData, mentionsData] = await Promise.all([
-          apiService.getBrands(),
-          apiService.getMentions({ limit: 10 })
-        ])
-        setBrands(brandsData)
-        setMentions(mentionsData)
-        if (brandsData.length > 0) {
-          setSelectedBrand(brandsData[0].id)
+        const response = await fetch('http://localhost:8000/api/demo/sample-data');
+        const data = await response.json();
+        setBrands(data.brands);
+        setMentions(data.mentions);
+        if (data.brands.length > 0) {
+          setSelectedBrand(data.brands[0].id);
         }
       } catch (error) {
-        console.error('Failed to load data:', error)
+        console.error('Failed to load data:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   if (loading) {
     return (
@@ -44,7 +43,7 @@ export default function Dashboard() {
           </div>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   return (
@@ -86,13 +85,16 @@ export default function Dashboard() {
           />
           <MetricCard
             title="Avg Sentiment"
-            value="0.65"
+            value={mentions.length > 0 
+              ? (mentions.reduce((sum, m) => sum + m.sentiment_score, 0) / mentions.length).toFixed(2)
+              : '0.00'
+            }
             change="+5%"
             trend="up"
           />
           <MetricCard
             title="Crisis Alerts"
-            value="2"
+            value="0"
             change="-50%"
             trend="down"
           />
@@ -116,14 +118,13 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">{mention.content}</p>
                     <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
-                      <span>{mention.platform}</span>
-                      <span>{new Date(mention.published_at).toLocaleDateString()}</span>
+                      <span>Platform: {mention.platform}</span>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        mention.sentiment_label === 'positive' ? 'bg-green-100 text-green-800' :
-                        mention.sentiment_label === 'negative' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                        mention.sentiment_score > 0.6 ? 'bg-green-100 text-green-800' :
+                        mention.sentiment_score > 0.3 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
                       }`}>
-                        {mention.sentiment_label}
+                        Sentiment: {(mention.sentiment_score * 100).toFixed(0)}%
                       </span>
                     </div>
                   </div>
@@ -134,14 +135,14 @@ export default function Dashboard() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
 function MetricCard({ title, value, change, trend }: {
-  title: string
-  value: string
-  change: string
-  trend: 'up' | 'down'
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
 }) {
   return (
     <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -161,5 +162,5 @@ function MetricCard({ title, value, change, trend }: {
         </div>
       </div>
     </div>
-  )
+  );
 }
