@@ -160,7 +160,7 @@ mentions (
 
 ### **🔄 Phase 2: ML Pipeline (IN PROGRESS)**
 ```bash
-🔄 Advanced NLP preprocessing pipeline
+✅ Advanced NLP preprocessing pipeline
 🔄 BERT-based sentiment analysis model
 🔄 Crisis detection algorithm
 🔄 Real-time data processing
