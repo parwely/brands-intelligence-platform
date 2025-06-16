@@ -1,95 +1,130 @@
 // frontend/src/services/api.ts
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000'
 
 export interface Brand {
-  id: string
-  name: string
-  industry: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  id: string;
+  name: string;
+  industry: string;
+  website?: string;
+  is_active: boolean;
 }
 
 export interface Mention {
-  id: string
-  brand_id: string
-  content: string
-  platform: string
-  sentiment_score: number
-  sentiment_label: string
-  crisis_probability: number
-  published_at: string
-  likes_count: number
-  shares_count: number
-  comments_count: number
+  id: string;
+  brand_id: string;
+  content: string;
+  platform: string;
+  sentiment_score: number;
+  sentiment_label: 'positive' | 'negative' | 'neutral';
+  crisis_probability: number;
+  published_at: string;
+  likes_count: number;
+  shares_count: number;
+  comments_count: number;
+}
+
+export interface SentimentAnalysis {
+  sentiment_score: number;
+  sentiment_label: string;
+  confidence: number;
+  crisis_probability: number;
+  urgency_score: number;
+  crisis_indicators: number;
+  model_info: any;
+}
+
+export interface CrisisAlert {
+  id: string;
+  brand_id: string;
+  content: string;
+  platform: string;
+  sentiment_score: number;
+  sentiment_label: string;
+  crisis_probability: number;
+  published_at: string;
+  urgency_level: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface AnalyticsOverview {
+  total_mentions: number;
+  average_sentiment: number;
+  sentiment_breakdown: {
+    positive: number;
+    negative: number;
+    neutral: number;
+  };
+  high_crisis_alerts: number;
+  urgent_mentions: number;
+  sentiment_distribution: {
+    positive_percentage: number;
+    negative_percentage: number;
+    neutral_percentage: number;
+  };
+  crisis_metrics: {
+    crisis_percentage: number;
+    urgent_percentage: number;
+  };
 }
 
 class ApiService {
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    })
+  private baseURL = 'http://localhost:8000';
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`)
-    }
-
-    return response.json()
-  }
-
-  // Brands
   async getBrands(): Promise<Brand[]> {
-    return this.request<Brand[]>('/api/brands/')
+    const response = await fetch(`${this.baseURL}/api/brands`);
+    if (!response.ok) throw new Error('Failed to fetch brands');
+    return response.json();
   }
 
-  async createBrand(brand: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'is_active'>): Promise<Brand> {
-    return this.request<Brand>('/api/brands/', {
-      method: 'POST',
-      body: JSON.stringify(brand),
-    })
-  }
-
-  // Mentions
-  async getMentions(params?: {
-    brand_id?: string
-    platform?: string
-    days?: number
-    limit?: number
-  }): Promise<Mention[]> {
-    const searchParams = new URLSearchParams()
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          searchParams.append(key, value.toString())
-        }
-      })
-    }
+  async getMentions(params?: { limit?: number; brand_id?: string }): Promise<Mention[]> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.brand_id) query.append('brand_id', params.brand_id);
     
-    return this.request<Mention[]>(`/api/mentions/?${searchParams}`)
+    const response = await fetch(`${this.baseURL}/api/mentions?${query}`);
+    if (!response.ok) throw new Error('Failed to fetch mentions');
+    return response.json();
   }
 
-  // Analytics
-  async getSentimentOverview(brandId: string, days: number = 7) {
-    return this.request(`/api/analytics/sentiment-overview?brand_id=${brandId}&days=${days}`)
+  async getSampleData(): Promise<{ brands: Brand[]; mentions: Mention[] }> {
+    const response = await fetch(`${this.baseURL}/api/demo/sample-data`);
+    if (!response.ok) throw new Error('Failed to fetch sample data');
+    return response.json();
   }
 
-  async getPlatformBreakdown(brandId: string, days: number = 30) {
-    return this.request(`/api/analytics/platform-breakdown?brand_id=${brandId}&days=${days}`)
+  async analyzeSentiment(text: string): Promise<SentimentAnalysis> {
+    const response = await fetch(`${this.baseURL}/api/ml/analyze-sentiment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!response.ok) throw new Error('Failed to analyze sentiment');
+    return response.json();
   }
 
-  async getCrisisMetrics(brandId: string, threshold: number = 0.7) {
-    return this.request(`/api/analytics/crisis-metrics?brand_id=${brandId}&threshold=${threshold}`)
+  async getCrisisAlerts(threshold: number = 0.7): Promise<{ crisis_alerts: CrisisAlert[]; total_alerts: number }> {
+    const response = await fetch(`${this.baseURL}/api/mentions/crisis-alerts?threshold=${threshold}`);
+    if (!response.ok) throw new Error('Failed to fetch crisis alerts');
+    return response.json();
   }
 
-  // Demo data
-  async getDemoData() {
-    return this.request('/api/demo/sample-data')
+  async getAnalyticsOverview(): Promise<AnalyticsOverview> {
+    const response = await fetch(`${this.baseURL}/api/analytics/sentiment-overview`);
+    if (!response.ok) throw new Error('Failed to fetch analytics');
+    return response.json();
+  }
+
+  async reanalyzeMention(mentionId: string): Promise<any> {
+    const response = await fetch(`${this.baseURL}/api/mentions/${mentionId}/reanalyze`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to reanalyze mention');
+    return response.json();
+  }
+
+  async getModelInfo(): Promise<any> {
+    const response = await fetch(`${this.baseURL}/api/ml/model-info`);
+    if (!response.ok) throw new Error('Failed to fetch model info');
+    return response.json();
   }
 }
 
-export const apiService = new ApiService()
+export const apiService = new ApiService();

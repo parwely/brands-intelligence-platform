@@ -1,14 +1,42 @@
+// frontend/src/components/layout/Header.tsx
 'use client'
-import React, { useState } from 'react'
-import { Bell, Search, User, Menu, Settings } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Bell, Search, User, Menu, Settings, AlertTriangle } from 'lucide-react'
+import { apiService } from '@/services/api'
 
 interface HeaderProps {
   onMenuClick?: () => void
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const [notifications, setNotifications] = useState(3)
+  const [notifications, setNotifications] = useState(0)
+  const [crisisAlerts, setCrisisAlerts] = useState(0)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [systemStatus, setSystemStatus] = useState<'online' | 'offline' | 'warning'>('online')
+
+  useEffect(() => {
+    const loadAlerts = async () => {
+      try {
+        const { total_alerts } = await apiService.getCrisisAlerts(0.7);
+        setCrisisAlerts(total_alerts);
+        setNotifications(total_alerts + 2); // Add some general notifications
+      } catch (error) {
+        console.error('Failed to load alerts:', error);
+        setSystemStatus('warning');
+      }
+    };
+
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement search functionality
+    console.log('Searching for:', searchQuery);
+  };
 
   return (
     <div className="sticky top-0 z-40 lg:mx-auto lg:max-w-7xl lg:px-8">
@@ -28,20 +56,21 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
           {/* Search */}
-          <form className="relative flex flex-1" action="#" method="GET">
+          <form className="relative flex flex-1" onSubmit={handleSearch}>
             <label htmlFor="search-field" className="sr-only">
               Search
             </label>
             <Search
-              className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400"
+              className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400 ml-3"
               aria-hidden="true"
             />
             <input
               id="search-field"
-              className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
+              className="block h-full w-full border-0 py-0 pl-10 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
               placeholder="Search brands, mentions, or keywords..."
               type="search"
-              name="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </form>
 
@@ -49,15 +78,20 @@ export function Header({ onMenuClick }: HeaderProps) {
             {/* Crisis Alert Button */}
             <button
               type="button"
-              className="relative rounded-full bg-red-50 p-2 text-red-600 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              title="Crisis Alerts"
+              className={`relative rounded-full p-2 ${
+                crisisAlerts > 0 
+                  ? 'bg-red-50 text-red-600 hover:text-red-500' 
+                  : 'bg-gray-50 text-gray-400'
+              } focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2`}
+              title={`${crisisAlerts} Crisis Alerts`}
             >
               <span className="sr-only">View crisis alerts</span>
-              <div className="h-6 w-6 text-2xl">🚨</div>
-              {/* Crisis indicator */}
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
-                !
-              </span>
+              <AlertTriangle className="h-6 w-6" />
+              {crisisAlerts > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-medium">
+                  {crisisAlerts > 9 ? '9+' : crisisAlerts}
+                </span>
+              )}
             </button>
 
             {/* Notifications button */}
@@ -92,17 +126,13 @@ export function Header({ onMenuClick }: HeaderProps) {
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <span className="hidden lg:flex lg:items-center">
-                  <span
-                    className="ml-4 text-sm font-semibold leading-6 text-gray-900"
-                    aria-hidden="true"
-                  >
+                  <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
                     Brand Manager
                   </span>
                   <svg
                     className="ml-2 h-5 w-5 text-gray-400"
                     viewBox="0 0 20 20"
                     fill="currentColor"
-                    aria-hidden="true"
                   >
                     <path
                       fillRule="evenodd"
@@ -115,23 +145,18 @@ export function Header({ onMenuClick }: HeaderProps) {
 
               {/* Profile dropdown menu */}
               {isProfileMenuOpen && (
-                <div className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
-                  <a
-                    href="#"
-                    className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
-                  >
+                <div className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5">
+                  <a href="#" className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50">
                     Your profile
                   </a>
-                  <a
-                    href="#"
-                    className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
-                  >
+                  <a href="#" className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50">
                     Settings
                   </a>
-                  <a
-                    href="#"
-                    className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
-                  >
+                  <a href="#" className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50">
+                    API Documentation
+                  </a>
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <a href="#" className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50">
                     Sign out
                   </a>
                 </div>
@@ -142,12 +167,20 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       {/* Real-time status bar */}
-      <div className="bg-gradient-to-r from-green-400 to-blue-500 px-4 py-2">
+      <div className={`px-4 py-2 ${
+        systemStatus === 'online' 
+          ? 'bg-gradient-to-r from-green-400 to-blue-500' 
+          : systemStatus === 'warning'
+          ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+          : 'bg-gradient-to-r from-red-400 to-red-600'
+      }`}>
         <div className="flex items-center justify-between text-white text-sm">
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
-              <div className="h-2 w-2 bg-green-300 rounded-full animate-pulse mr-2"></div>
-              <span>System Status: Online</span>
+              <div className={`h-2 w-2 rounded-full mr-2 ${
+                systemStatus === 'online' ? 'bg-green-300 animate-pulse' : 'bg-yellow-300'
+              }`}></div>
+              <span>System Status: {systemStatus === 'online' ? 'Online' : 'Warning'}</span>
             </div>
             <div className="flex items-center">
               <span>Last Update: {new Date().toLocaleTimeString()}</span>
@@ -156,7 +189,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="flex items-center space-x-4">
             <span>Monitoring: 3 brands</span>
             <span>•</span>
-            <span>24/7 Active</span>
+            <span>{crisisAlerts > 0 ? `${crisisAlerts} Crisis Alerts` : '24/7 Active'}</span>
           </div>
         </div>
       </div>
