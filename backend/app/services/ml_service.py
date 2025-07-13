@@ -1,192 +1,401 @@
 # backend/app/services/ml_service.py
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 import asyncio
+from datetime import datetime
 from ..ml.sentiment.analyzer import SentimentAnalyzer
-# from ..ml.preprocessing.text_cleaner import TextPreprocessor  # Temporarily disabled
+from ..ml.sentiment.bert_analyzer import BERTSentimentAnalyzer
+from ..ml.sentiment.crisis_detector import CrisisDetector
+from ..ml.preprocessing.text_cleaner import TextPreprocessor
 
 logger = logging.getLogger(__name__)
 
 class MLService:
-    """Main ML service orchestrating all AI operations"""
+    """Advanced ML service with sentiment analysis, crisis detection, and real-time processing"""
     
     def __init__(self):
+        # Initialize ML components with error handling
         try:
             self.sentiment_analyzer = SentimentAnalyzer()
-            # self.preprocessor = TextPreprocessor()  # Temporarily disabled
-            self._model_version = "1.0.0"
-            logger.info("ML Service initialized successfully")
+            logger.info("SentimentAnalyzer initialized successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize ML Service: {e}")
-            raise
+            logger.error(f"Failed to initialize SentimentAnalyzer: {e}")
+            self.sentiment_analyzer = None
+        
+        try:
+            self.bert_analyzer = BERTSentimentAnalyzer()
+            logger.info("BERTSentimentAnalyzer initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize BERTSentimentAnalyzer: {e}")
+            self.bert_analyzer = None
+        
+        try:
+            self.crisis_detector = CrisisDetector()
+            logger.info("CrisisDetector initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize CrisisDetector: {e}")
+            self.crisis_detector = None
+        
+        try:
+            self.preprocessor = TextPreprocessor()
+            logger.info("TextPreprocessor initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize TextPreprocessor: {e}")
+            self.preprocessor = None
+    
+    async def extract_features(self, text: str) -> Dict:
+        """Extract comprehensive text features using the preprocessor"""
+        try:
+            if self.preprocessor:
+                return await self.preprocessor.extract_features(text)
+            else:
+                return self._extract_basic_features(text)
+        except Exception as e:
+            logger.error(f"Feature extraction failed: {e}")
+            return self._extract_basic_features(text)
     
     def _extract_basic_features(self, text: str) -> Dict:
-        """Basic feature extraction without external dependencies"""
-        if not text:
-            return {
-                'word_count': 0, 'caps_ratio': 0.0, 'exclamation_count': 0,
-                'question_count': 0, 'has_caps': False, 'has_exclamation': False,
-                'has_question': False, 'has_emoji': False, 'polarity': 0.0
-            }
-        
-        words = text.split()
-        word_count = len(words)
-        caps_count = sum(1 for c in text if c.isupper())
-        caps_ratio = caps_count / len(text) if text else 0
-        exclamation_count = text.count('!')
-        question_count = text.count('?')
-        
+        """Fallback feature extraction"""
         return {
-            'word_count': word_count,
-            'caps_ratio': round(caps_ratio, 3),
-            'exclamation_count': exclamation_count,
-            'question_count': question_count,
-            'has_caps': caps_ratio > 0.3,
-            'has_exclamation': exclamation_count > 0,
-            'has_question': question_count > 0,
-            'has_emoji': False,  # Simplified
-            'polarity': 0.0
+            'char_count': len(text),
+            'word_count': len(text.split()),
+            'sentence_count': len([s for s in text.split('.') if s.strip()]),
+            'uppercase_ratio': sum(1 for c in text if c.isupper()) / len(text) if text else 0,
+            'punctuation_count': sum(1 for c in text if not c.isalnum() and not c.isspace()),
+            'exclamation_count': text.count('!'),
+            'question_count': text.count('?')
         }
-        
-    async def analyze_mention_sentiment(self, text: str) -> Dict:
-        """Comprehensive analysis of a single mention"""
+    
+    async def analyze_mention_sentiment(self, text: str, use_bert: bool = True) -> Dict:
+        """Analyze sentiment of a single mention with optional BERT analysis"""
         try:
-            # Get text features
-            features = self._extract_basic_features(text)
+            if not text or not isinstance(text, str):
+                return self._fallback_sentiment_response("Invalid text input")
             
-            # Analyze sentiment with hybrid approach
-            sentiment = self.sentiment_analyzer.analyze_hybrid(text)
+            # Get base sentiment analysis
+            base_result = {}
+            if self.sentiment_analyzer:
+                try:
+                    base_result = await self.sentiment_analyzer.analyze_best_available(text)
+                except Exception as e:
+                    logger.error(f"Base sentiment analysis failed: {e}")
+                    base_result = self._fallback_sentiment_response("Base analysis failed")
             
-            # Calculate crisis probability
-            crisis_prob = await self._calculate_crisis_probability(sentiment, features)
+            # Add BERT analysis if requested and available
+            bert_result = {}
+            if use_bert and self.bert_analyzer and self.bert_analyzer.available:
+                try:
+                    bert_result = await self.bert_analyzer.analyze_sentiment(text)
+                except Exception as e:
+                    logger.error(f"BERT sentiment analysis failed: {e}")
+                    bert_result = {'error': 'BERT analysis failed'}
             
-            # Calculate urgency score
-            urgency = self._calculate_urgency_score(sentiment, features)
+            # Combine results
+            combined_result = {
+                'text': text[:200] + '...' if len(text) > 200 else text,
+                'base_analysis': base_result,
+                'bert_analysis': bert_result if bert_result else None,
+                'timestamp': datetime.now().isoformat(),
+                'processing_time_ms': 0  # Placeholder
+            }
+            
+            # Use best available result
+            if bert_result and 'sentiment_score' in bert_result:
+                combined_result['final_sentiment'] = bert_result
+            elif base_result and 'sentiment_score' in base_result:
+                combined_result['final_sentiment'] = base_result
+            else:
+                combined_result['final_sentiment'] = self._fallback_sentiment_response("All analysis failed")
+            
+            return combined_result
+            
+        except Exception as e:
+            logger.error(f"Mention sentiment analysis failed: {e}")
+            return {
+                'error': str(e),
+                'final_sentiment': self._fallback_sentiment_response("Analysis error"),
+                'timestamp': datetime.now().isoformat()
+            }
+    
+    async def analyze_crisis(self, mentions: List[Dict], brand_name: str) -> Dict:
+        """Analyze crisis indicators in mentions for a brand"""
+        try:
+            if not mentions or not brand_name:
+                return {'crisis_level': 'none', 'crisis_score': 0.0, 'error': 'Invalid input'}
+            
+            if not self.crisis_detector:
+                return {'crisis_level': 'none', 'crisis_score': 0.0, 'error': 'Crisis detector unavailable'}
+            
+            # Analyze crisis in batch
+            crisis_results = await self.crisis_detector.batch_detect_crisis(mentions, brand_name)
+            
+            # Calculate aggregate crisis metrics
+            if crisis_results:
+                scores = [r.get('crisis_score', 0) for r in crisis_results]
+                levels = [r.get('crisis_level', 'none') for r in crisis_results]
+                
+                max_score = max(scores) if scores else 0.0
+                avg_score = sum(scores) / len(scores) if scores else 0.0
+                
+                # Determine overall crisis level
+                level_priority = {'critical': 4, 'major': 3, 'moderate': 2, 'minor': 1, 'none': 0}
+                max_level = max(levels, key=lambda x: level_priority.get(x, 0))
+                
+                # Get brand summary
+                brand_summary = self.crisis_detector.get_brand_crisis_summary(brand_name)
+                
+                return {
+                    'brand': brand_name,
+                    'overall_crisis_level': max_level,
+                    'max_crisis_score': round(max_score, 3),
+                    'avg_crisis_score': round(avg_score, 3),
+                    'total_mentions_analyzed': len(mentions),
+                    'crisis_mentions_count': len([r for r in crisis_results if r.get('crisis_level') != 'none']),
+                    'individual_results': crisis_results,
+                    'brand_summary': brand_summary,
+                    'timestamp': datetime.now().isoformat()
+                }
+            else:
+                return {'crisis_level': 'none', 'crisis_score': 0.0, 'error': 'No results from crisis analysis'}
+                
+        except Exception as e:
+            logger.error(f"Crisis analysis failed: {e}")
+            return {
+                'error': str(e),
+                'crisis_level': 'none',
+                'crisis_score': 0.0,
+                'timestamp': datetime.now().isoformat()
+            }
+    
+    async def batch_analyze_mentions(self, mentions: List[Dict], brand_name: str, include_bert: bool = True) -> Dict:
+        """Analyze multiple mentions for sentiment and crisis indicators"""
+        try:
+            if not mentions:
+                return {'error': 'No mentions provided', 'results': []}
+            
+            # Extract texts for analysis
+            texts = []
+            for mention in mentions:
+                text = mention.get('text', mention.get('content', ''))
+                if text:
+                    texts.append(text)
+            
+            if not texts:
+                return {'error': 'No valid texts found in mentions', 'results': []}
+            
+            # Parallel sentiment analysis
+            sentiment_tasks = [
+                self.analyze_mention_sentiment(text, use_bert=include_bert) 
+                for text in texts
+            ]
+            sentiment_results = await asyncio.gather(*sentiment_tasks, return_exceptions=True)
+            
+            # Crisis analysis
+            crisis_result = await self.analyze_crisis(mentions, brand_name)
+            
+            # Combine results with mention metadata
+            combined_results = []
+            for i, mention in enumerate(mentions):
+                if i < len(sentiment_results):
+                    sentiment = sentiment_results[i]
+                    if isinstance(sentiment, Exception):
+                        sentiment = {'error': str(sentiment)}
+                    
+                    combined_results.append({
+                        'mention_id': mention.get('id', f'mention_{i}'),
+                        'text': mention.get('text', mention.get('content', '')),
+                        'sentiment_analysis': sentiment,
+                        'source': mention.get('source', 'unknown'),
+                        'timestamp': mention.get('timestamp', datetime.now().isoformat())
+                    })
             
             return {
-                'sentiment_score': sentiment['sentiment_score'],
-                'sentiment_label': sentiment['sentiment_label'],
-                'confidence': sentiment['confidence'],
-                'crisis_probability': crisis_prob,
-                'urgency_score': urgency,
-                'crisis_indicators': sentiment.get('crisis_indicators', 0),
-                'text_features': {
-                    'word_count': features['word_count'],
-                    'has_caps': features['has_caps'],
-                    'has_exclamation': features['has_exclamation'],
-                    'has_emoji': features['has_emoji'],
-                    'caps_ratio': features['caps_ratio'],
-                    'polarity': features['polarity']
-                },
-                'model_info': {
-                    'model': sentiment['model'],
-                    'version': self._model_version,
-                    'textblob_score': sentiment.get('textblob_score'),
-                    'keyword_score': sentiment.get('keyword_score')
-                }
+                'brand': brand_name,
+                'total_mentions': len(mentions),
+                'analyzed_mentions': len(combined_results),
+                'sentiment_results': combined_results,
+                'crisis_analysis': crisis_result,
+                'processing_timestamp': datetime.now().isoformat(),
+                'bert_used': include_bert and self.bert_analyzer and self.bert_analyzer.available
             }
-        except Exception as e:
-            logger.error(f"ML analysis failed for text '{text[:50]}...': {e}")
-            return self._error_response()
-    
-    async def batch_analyze_mentions(self, texts: List[str]) -> List[Dict]:
-        """Analyze multiple mentions efficiently"""
-        try:
-            tasks = [self.analyze_mention_sentiment(text) for text in texts]
-            return await asyncio.gather(*tasks)
+            
         except Exception as e:
             logger.error(f"Batch analysis failed: {e}")
-            return [self._error_response() for _ in texts]
+            return {
+                'error': str(e),
+                'brand': brand_name,
+                'total_mentions': len(mentions) if mentions else 0,
+                'results': [],
+                'timestamp': datetime.now().isoformat()
+            }
     
-    async def _calculate_crisis_probability(self, sentiment: Dict, features: Dict) -> float:
-        """Advanced crisis probability calculation"""
-        crisis_score = 0.0
-        
-        # Base score from sentiment
-        sentiment_score = sentiment['sentiment_score']
-        if sentiment_score < 0.2:
-            crisis_score += 0.5
-        elif sentiment_score < 0.4:
-            crisis_score += 0.3
-        
-        # Crisis keywords are strong indicators
-        crisis_indicators = sentiment.get('crisis_indicators', 0)
-        crisis_score += min(0.4, crisis_indicators * 0.2)
-        
-        # Text pattern indicators
-        if features['caps_ratio'] > 0.5:  # Lots of caps = urgency
-            crisis_score += 0.2
-        if features['exclamation_count'] > 3:  # Multiple exclamations
-            crisis_score += 0.15
-        if features['has_emoji'] and sentiment_score < 0.3:  # Emotional negative content
-            crisis_score += 0.1
-        
-        # High confidence negative sentiment
-        if sentiment['confidence'] > 0.8 and sentiment['sentiment_label'] == 'negative':
-            crisis_score += 0.2
-        
-        # Very short angry messages are often more urgent
-        if features['word_count'] < 10 and sentiment_score < 0.3:
-            crisis_score += 0.1
-        
-        return min(1.0, crisis_score)
+    async def analyze_brand_health(self, brand_name: str, mentions: List[Dict], time_window_hours: int = 24) -> Dict:
+        """Comprehensive brand health analysis"""
+        try:
+            if not mentions:
+                return self._empty_brand_health(brand_name, "No mentions provided")
+            
+            # Batch analysis
+            analysis_result = await self.batch_analyze_mentions(mentions, brand_name, include_bert=True)
+            
+            if 'error' in analysis_result:
+                return self._empty_brand_health(brand_name, analysis_result['error'])
+            
+            # Extract sentiment scores
+            sentiment_scores = []
+            sentiment_labels = []
+            
+            for result in analysis_result.get('sentiment_results', []):
+                sentiment = result.get('sentiment_analysis', {}).get('final_sentiment', {})
+                if 'sentiment_score' in sentiment:
+                    sentiment_scores.append(sentiment['sentiment_score'])
+                    sentiment_labels.append(sentiment.get('sentiment_label', 'neutral'))
+            
+            # Calculate metrics
+            if sentiment_scores:
+                avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
+                positive_ratio = len([s for s in sentiment_labels if s == 'positive']) / len(sentiment_labels)
+                negative_ratio = len([s for s in sentiment_labels if s == 'negative']) / len(sentiment_labels)
+                neutral_ratio = len([s for s in sentiment_labels if s == 'neutral']) / len(sentiment_labels)
+            else:
+                avg_sentiment = 0.5
+                positive_ratio = negative_ratio = neutral_ratio = 0.0
+            
+            # Crisis metrics
+            crisis_analysis = analysis_result.get('crisis_analysis', {})
+            crisis_score = crisis_analysis.get('max_crisis_score', 0.0)
+            crisis_level = crisis_analysis.get('overall_crisis_level', 'none')
+            
+            # Overall health score (0-100)
+            health_score = self._calculate_health_score(avg_sentiment, crisis_score, positive_ratio, negative_ratio)
+            
+            # Health level
+            health_level = self._determine_health_level(health_score)
+            
+            return {
+                'brand': brand_name,
+                'health_score': round(health_score, 1),
+                'health_level': health_level,
+                'sentiment_metrics': {
+                    'average_sentiment': round(avg_sentiment, 3),
+                    'positive_ratio': round(positive_ratio, 3),
+                    'negative_ratio': round(negative_ratio, 3),
+                    'neutral_ratio': round(neutral_ratio, 3),
+                    'total_mentions': len(mentions)
+                },
+                'crisis_metrics': {
+                    'crisis_score': crisis_score,
+                    'crisis_level': crisis_level,
+                    'crisis_mentions': crisis_analysis.get('crisis_mentions_count', 0)
+                },
+                'recommendations': self._generate_recommendations(health_score, crisis_level, negative_ratio),
+                'analysis_timestamp': datetime.now().isoformat(),
+                'time_window_hours': time_window_hours
+            }
+            
+        except Exception as e:
+            logger.error(f"Brand health analysis failed: {e}")
+            return self._empty_brand_health(brand_name, str(e))
     
-    def _calculate_urgency_score(self, sentiment: Dict, features: Dict) -> float:
-        """Calculate how urgent a response is needed"""
-        urgency = 0.0
+    def _calculate_health_score(self, avg_sentiment: float, crisis_score: float, positive_ratio: float, negative_ratio: float) -> float:
+        """Calculate overall brand health score (0-100)"""
+        # Base score from sentiment (0-100)
+        sentiment_score = avg_sentiment * 100
         
-        # High crisis probability = high urgency
-        crisis_indicators = sentiment.get('crisis_indicators', 0)
-        urgency += crisis_indicators * 0.3
+        # Positive/negative ratio adjustment
+        ratio_adjustment = (positive_ratio - negative_ratio) * 20
         
-        # Multiple exclamations suggest urgency
-        urgency += min(0.3, features['exclamation_count'] * 0.1)
+        # Crisis penalty
+        crisis_penalty = crisis_score * 50
         
-        # All caps text suggests urgency
-        if features['caps_ratio'] > 0.7:
-            urgency += 0.4
+        # Combine factors
+        health_score = sentiment_score + ratio_adjustment - crisis_penalty
         
-        # Questions might need responses
-        if features['has_question']:
-            urgency += 0.2
-        
-        # Recent and negative = urgent
-        if sentiment['sentiment_score'] < 0.3:
-            urgency += 0.3
-        
-        return min(1.0, urgency)
+        # Ensure score is between 0-100
+        return max(0, min(100, health_score))
     
-    def _error_response(self) -> Dict:
-        """Default response when analysis fails"""
+    def _determine_health_level(self, health_score: float) -> str:
+        """Determine health level from score"""
+        if health_score >= 80:
+            return 'excellent'
+        elif health_score >= 65:
+            return 'good'
+        elif health_score >= 50:
+            return 'fair'
+        elif health_score >= 35:
+            return 'poor'
+        else:
+            return 'critical'
+    
+    def _generate_recommendations(self, health_score: float, crisis_level: str, negative_ratio: float) -> List[str]:
+        """Generate actionable recommendations based on analysis"""
+        recommendations = []
+        
+        if crisis_level in ['critical', 'major']:
+            recommendations.append("Immediate crisis response required - engage crisis management team")
+            recommendations.append("Monitor social media channels closely for emerging issues")
+        
+        if health_score < 50:
+            recommendations.append("Improve customer service and address common complaints")
+            recommendations.append("Launch positive PR campaigns to improve brand perception")
+        
+        if negative_ratio > 0.3:
+            recommendations.append("Investigate root causes of negative sentiment")
+            recommendations.append("Implement targeted customer satisfaction improvements")
+        
+        if health_score > 75:
+            recommendations.append("Maintain current positive momentum")
+            recommendations.append("Consider leveraging positive sentiment for marketing campaigns")
+        
+        if not recommendations:
+            recommendations.append("Continue monitoring brand mentions and sentiment trends")
+        
+        return recommendations
+    
+    def _fallback_sentiment_response(self, error_msg: str) -> Dict:
+        """Fallback response for sentiment analysis"""
         return {
             'sentiment_score': 0.5,
             'sentiment_label': 'neutral',
             'confidence': 0.0,
-            'crisis_probability': 0.0,
-            'urgency_score': 0.0,
-            'crisis_indicators': 0,
-            'text_features': {},
-            'model_info': {'model': 'error', 'version': self._model_version}
+            'model': 'fallback',
+            'error': error_msg
         }
     
-    async def get_model_info(self) -> Dict:
-        """Get information about loaded models"""
+    def _empty_brand_health(self, brand_name: str, error_msg: str) -> Dict:
+        """Empty brand health response for errors"""
         return {
-            'version': self._model_version,
-            'models': {
-                'sentiment': 'Hybrid (TextBlob + Keywords)',
-                'preprocessing': 'NLTK + Custom Rules',
-                'crisis_detection': 'Rule-based Algorithm'
+            'brand': brand_name,
+            'health_score': 0.0,
+            'health_level': 'unknown',
+            'error': error_msg,
+            'sentiment_metrics': {
+                'average_sentiment': 0.5,
+                'positive_ratio': 0.0,
+                'negative_ratio': 0.0,
+                'neutral_ratio': 0.0,
+                'total_mentions': 0
             },
-            'capabilities': [
-                'Sentiment Analysis',
-                'Crisis Detection',
-                'Urgency Scoring',
-                'Text Feature Extraction'
-            ],
-            'languages': ['English'],
-            'status': 'active'
+            'crisis_metrics': {
+                'crisis_score': 0.0,
+                'crisis_level': 'none',
+                'crisis_mentions': 0
+            },
+            'recommendations': ["Unable to analyze - insufficient data"],
+            'analysis_timestamp': datetime.now().isoformat()
         }
-
-# Global ML service instance
-ml_service = MLService()
+    
+    def get_service_status(self) -> Dict:
+        """Get status of all ML service components"""
+        return {
+            'sentiment_analyzer': self.sentiment_analyzer is not None,
+            'bert_analyzer': self.bert_analyzer is not None and getattr(self.bert_analyzer, 'available', False),
+            'crisis_detector': self.crisis_detector is not None,
+            'text_preprocessor': self.preprocessor is not None,
+            'service_healthy': all([
+                self.sentiment_analyzer is not None,
+                self.crisis_detector is not None,
+                self.preprocessor is not None
+            ]),
+            'timestamp': datetime.now().isoformat()
+        }
