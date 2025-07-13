@@ -3,7 +3,7 @@ from typing import Dict, List
 import logging
 import asyncio
 from ..ml.sentiment.analyzer import SentimentAnalyzer
-from ..ml.preprocessing.text_cleaner import TextPreprocessor
+# from ..ml.preprocessing.text_cleaner import TextPreprocessor  # Temporarily disabled
 
 logger = logging.getLogger(__name__)
 
@@ -13,18 +13,46 @@ class MLService:
     def __init__(self):
         try:
             self.sentiment_analyzer = SentimentAnalyzer()
-            self.preprocessor = TextPreprocessor()
+            # self.preprocessor = TextPreprocessor()  # Temporarily disabled
             self._model_version = "1.0.0"
             logger.info("ML Service initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize ML Service: {e}")
             raise
+    
+    def _extract_basic_features(self, text: str) -> Dict:
+        """Basic feature extraction without external dependencies"""
+        if not text:
+            return {
+                'word_count': 0, 'caps_ratio': 0.0, 'exclamation_count': 0,
+                'question_count': 0, 'has_caps': False, 'has_exclamation': False,
+                'has_question': False, 'has_emoji': False, 'polarity': 0.0
+            }
+        
+        words = text.split()
+        word_count = len(words)
+        caps_count = sum(1 for c in text if c.isupper())
+        caps_ratio = caps_count / len(text) if text else 0
+        exclamation_count = text.count('!')
+        question_count = text.count('?')
+        
+        return {
+            'word_count': word_count,
+            'caps_ratio': round(caps_ratio, 3),
+            'exclamation_count': exclamation_count,
+            'question_count': question_count,
+            'has_caps': caps_ratio > 0.3,
+            'has_exclamation': exclamation_count > 0,
+            'has_question': question_count > 0,
+            'has_emoji': False,  # Simplified
+            'polarity': 0.0
+        }
         
     async def analyze_mention_sentiment(self, text: str) -> Dict:
         """Comprehensive analysis of a single mention"""
         try:
             # Get text features
-            features = self.preprocessor.extract_features(text)
+            features = self._extract_basic_features(text)
             
             # Analyze sentiment with hybrid approach
             sentiment = self.sentiment_analyzer.analyze_hybrid(text)
