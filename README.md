@@ -1,11 +1,13 @@
 # Brand Intelligence Platform
+
 ## "Real-time Brand Monitoring with AI-powered Crisis Detection"
 
 Eine Enterprise-Level Plattform, die Social Media, News und Review-Daten in Echtzeit analysiert, um Marken vor Reputationskrisen zu schützen und Marktchancen zu identifizieren.
 
 ## 🚀 Current Status: **ML PIPELINE OPERATIONAL** ✅
 
-### ✅ **Phase 3 Complete - Advanced ML Integration** 
+### ✅ **Phase 3 Complete - Advanced ML Integration**
+
 - ✅ **Backend API**: FastAPI with SQLite database + 9 ML endpoints
 - ✅ **Frontend Dashboard**: Next.js React app running on port 3000
 - ✅ **Database**: SQLite with sample brands and mentions data
@@ -16,13 +18,14 @@ Eine Enterprise-Level Plattform, die Social Media, News und Review-Daten in Echt
 - ✅ **Crisis Detection**: Multi-level threat assessment with keyword matching
 
 ### 🎯 **Quick Start - Full ML Pipeline Ready!**
+
 ```bash
 # Backend with ML (Terminal 1)
 cd backend
 pip install fastapi uvicorn sqlalchemy aiosqlite transformers torch
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend (Terminal 2) 
+# Frontend (Terminal 2)
 cd frontend
 npm install
 npm run dev
@@ -120,6 +123,7 @@ brand-intelligence-platform/
 ## 🎯 **Live Features Currently Working**
 
 ### **Dashboard Features** 📊
+
 - **Brand Monitoring**: 3 sample brands (TechCorp, GreenEnergy, HealthPlus)
 - **Metrics Cards**: Total mentions, average sentiment, crisis alerts, engagement
 - **Recent Mentions**: Real-time mention feed with sentiment scoring
@@ -127,6 +131,7 @@ brand-intelligence-platform/
 - **Responsive Design**: Mobile-friendly TailwindCSS interface
 
 ### **🤖 ML Pipeline Features** 🧠
+
 - **Sentiment Analysis**: Keyword-based + BERT transformer models
 - **Crisis Detection**: Multi-level threat assessment (none/minor/major/critical)
 - **Real-time Processing**: Async analysis pipeline with background tasks
@@ -136,6 +141,7 @@ brand-intelligence-platform/
 - **BERT Integration**: nlptown/bert-base-multilingual-uncased-sentiment (669MB)
 
 ### **API Endpoints** 🔌
+
 ```bash
 # Core API Endpoints
 GET /                           # API status and version
@@ -157,6 +163,7 @@ POST /ml/extract/features       # Extract text features and keywords
 ```
 
 ### **Database Schema** 💾
+
 ```sql
 -- SQLite Tables (Auto-created)
 brands (
@@ -170,7 +177,7 @@ brands (
 )
 
 mentions (
-    id VARCHAR PRIMARY KEY,           -- UUID as string  
+    id VARCHAR PRIMARY KEY,           -- UUID as string
     brand_id VARCHAR,                 -- Foreign key to brands
     content VARCHAR,                  -- Mention text
     platform VARCHAR,                 -- Social platform
@@ -188,6 +195,7 @@ mentions (
 ## 🛠️ **Technology Stack (Currently Implemented)**
 
 ### **Backend Stack** 🔧
+
 - **FastAPI**: High-performance async Python API framework with 13 endpoints
 - **SQLAlchemy**: Async ORM with SQLite support
 - **Pydantic**: Data validation and settings management
@@ -196,6 +204,7 @@ mentions (
 - **CORS**: Cross-origin resource sharing for frontend
 
 ### **🤖 ML Stack** 🧠
+
 - **Transformers**: Hugging Face transformers library for BERT models
 - **PyTorch**: Deep learning framework for BERT inference
 - **BERT Model**: nlptown/bert-base-multilingual-uncased-sentiment (669MB)
@@ -204,6 +213,7 @@ mentions (
 - **Async ML**: Concurrent sentiment analysis and crisis detection
 
 ### **Frontend Stack** 🎨
+
 - **Next.js 15**: React framework with App Router
 - **TypeScript**: Type-safe JavaScript development
 - **TailwindCSS**: Utility-first CSS framework
@@ -211,6 +221,7 @@ mentions (
 - **Responsive Design**: Mobile-first interface
 
 ### **Development Tools** 🔨
+
 - **uvicorn**: ASGI server for FastAPI
 - **npm/Node.js**: Frontend package management
 - **VS Code**: Recommended IDE
@@ -219,6 +230,7 @@ mentions (
 ## 🗺️ **Development Roadmap**
 
 ### **✅ Phase 1: Foundation (COMPLETED)**
+
 ```bash
 ✅ Docker development environment setup
 ✅ SQLite database with sample data
@@ -229,6 +241,7 @@ mentions (
 ```
 
 ### **✅ Phase 2: ML Pipeline (COMPLETED)**
+
 ```bash
 ✅ Advanced NLP preprocessing pipeline
 ✅ BERT-based sentiment analysis model (nlptown/bert-base-multilingual-uncased-sentiment)
@@ -239,6 +252,7 @@ mentions (
 ```
 
 ### **✅ Phase 3: Real-time ML Integration (COMPLETED)**
+
 ```bash
 ✅ 9 ML API endpoints operational
 ✅ Sentiment analysis (keyword + BERT hybrid)
@@ -252,6 +266,7 @@ mentions (
 ```
 
 ### **🔄 Phase 4: Frontend ML Integration (IN PROGRESS)**
+
 ```bash
 🔄 Dashboard integration with ML endpoints
 🔄 Real-time sentiment visualization
@@ -262,6 +277,7 @@ mentions (
 ```
 
 ### **📋 Phase 5: Production Enhancement (PLANNED)**
+
 ```bash
 📋 PostgreSQL migration for production
 📋 Real social media data ingestion
@@ -272,6 +288,7 @@ mentions (
 ```
 
 ### **🚀 Phase 6: Scale & Deploy (FUTURE)**
+
 ```bash
 🚀 Kubernetes deployment manifests
 🚀 CI/CD pipeline with GitHub Actions
@@ -284,6 +301,7 @@ mentions (
 ## 🧠 **ML Pipeline Architecture (Operational)**
 
 ### **Current Data Pipeline Flow**
+
 ```
 Text Input → ML Service → Analysis → Results → API Response → Dashboard
      ↓           ↓          ↓         ↓          ↓          ↓
@@ -292,25 +310,30 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
 ```
 
 ### **🤖 ML Components (Production Ready)**
+
 1. **✅ Sentiment Analyzer** (Operational)
+
    - Keyword-based analysis with positive/negative lexicon
    - Confidence scoring and polarity detection
    - Crisis indicator integration
    - Real-time inference capability
 
 2. **✅ BERT Sentiment Analyzer** (Operational)
+
    - nlptown/bert-base-multilingual-uncased-sentiment transformer
    - Multi-language support (cached 669MB model)
    - Confidence scoring with fallback mechanisms
    - Async processing for high throughput
 
 3. **✅ Crisis Detection** (Operational)
+
    - Multi-level classification (none/minor/major/critical)
    - Keyword-based threat assessment
    - Severity scoring with 0.0-1.0 scale
    - Brand-specific crisis tracking
 
 4. **✅ ML Service Orchestrator** (Operational)
+
    - Central coordination of all ML components
    - Error handling and graceful degradation
    - Async batch processing capabilities
@@ -323,6 +346,7 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
    - Ready for advanced NLP pipeline integration
 
 ### **📊 ML Performance Metrics**
+
 ```bash
 # Sentiment Analysis
 ✅ Keyword Analysis: <10ms per mention
@@ -330,7 +354,7 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
 ✅ Crisis Detection: <25ms per mention
 ✅ Batch Processing: 100 mentions in ~2-5 seconds
 
-# Model Specifications  
+# Model Specifications
 ✅ BERT Model: nlptown/bert-base-multilingual-uncased-sentiment
 ✅ Model Size: 669MB (cached locally)
 ✅ Languages: Multilingual support
@@ -340,18 +364,21 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
 ## 🎯 **Next Development Steps**
 
 ### **Immediate (Next 1-2 weeks)**
+
 1. **Frontend ML Integration** - Connect dashboard to ML endpoints
 2. **Real-time Crisis Alerts** - Live crisis detection notifications
 3. **Sentiment Trend Charts** - Visualize sentiment over time
 4. **Brand Health Dashboard** - Comprehensive health metrics UI
 
 ### **Short-term (Next month)**
+
 1. **Enhanced Crisis Monitoring** - Real-time crisis management interface
 2. **ML Model Optimization** - Performance tuning and caching
 3. **Advanced Visualizations** - Charts and analytics with Chart.js/D3.js
 4. **User Authentication** - Secure access control system
 
 ### **Medium-term (Next quarter)**
+
 1. **Real Social Media Integration** - Live Twitter/Reddit API connections
 2. **ML Model Training Pipeline** - Custom model training with MLflow
 3. **Advanced Analytics** - Competitive analysis and trend prediction
@@ -384,7 +411,7 @@ curl http://localhost:8000/api/demo/sample-data | jq
 ## 🎉 **Success Metrics**
 
 - ✅ **Backend API**: Responding on http://localhost:8000 (13 endpoints total)
-- ✅ **Frontend Dashboard**: Loading on http://localhost:3000  
+- ✅ **Frontend Dashboard**: Loading on http://localhost:3000
 - ✅ **Database**: 3 brands, 9 mentions loaded successfully
 - ✅ **API Communication**: CORS working, data flowing
 - ✅ **UI Components**: Responsive dashboard with metrics
@@ -398,6 +425,7 @@ curl http://localhost:8000/api/demo/sample-data | jq
 ## 📞 **Getting Help & Resources**
 
 ### **API Documentation & Testing**
+
 - **Interactive API Docs**: http://localhost:8000/docs (Swagger UI)
 - **ML Service Status**: http://localhost:8000/ml/status
 - **ML Demo Endpoint**: http://localhost:8000/ml/test/demo
@@ -405,15 +433,17 @@ curl http://localhost:8000/api/demo/sample-data | jq
 - **Health Check**: http://localhost:8000/health
 
 ### **ML Pipeline Testing**
+
 - **Quick ML Demo**: `python simple_ml_demo.py`
 - **Complete API Demo**: `python demo_ml_api.py`
 - **ML Implementation Docs**: `ML_IMPLEMENTATION_SUMMARY.md`
 
 ### **Frontend Interface**
+
 - **Main Dashboard**: http://localhost:3000
 - **Brand Monitoring**: Real-time sentiment and crisis tracking
 - **Responsive Design**: Mobile-friendly interface
-  
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
