@@ -48,7 +48,9 @@ class MLService:
         """Extract comprehensive text features using the preprocessor"""
         try:
             if self.preprocessor is not None:
-                return await self.preprocessor.extract_features(text)
+                # When preprocessor is available, call its extract_features method
+                # Note: This would be async when preprocessor is properly implemented
+                return self.preprocessor.extract_features(text)
             else:
                 return self._extract_basic_features(text)
         except Exception as e:
