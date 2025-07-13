@@ -5,48 +5,29 @@ import asyncio
 from ..ml.sentiment.analyzer import SentimentAnalyzer
 from ..ml.preprocessing.text_cleaner import TextPreprocessor
 
-# Import cache service (optional)
-try:
-    from ..core.cache import cache_service
-    CACHE_AVAILABLE = True
-except ImportError:
-    CACHE_AVAILABLE = False
-    cache_service = None
-
 logger = logging.getLogger(__name__)
 
 class MLService:
-    """Main ML service orchestrating all AI operations with caching"""
+    """Main ML service orchestrating all AI operations"""
     
     def __init__(self):
         try:
-            self.sentiment_analyzer = SentimentAnalyzer(use_bert=True)
+            self.sentiment_analyzer = SentimentAnalyzer()
             self.preprocessor = TextPreprocessor()
-            self._model_version = "2.0.0"  # Updated for BERT integration
-            self.use_cache = CACHE_AVAILABLE
-            logger.info("ML Service initialized successfully with BERT support")
+            self._model_version = "1.0.0"
+            logger.info("ML Service initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize ML Service: {e}")
             raise
         
-    async def analyze_mention_sentiment(self, text: str, use_cache: bool = True) -> Dict:
-        """Comprehensive analysis of a single mention with caching"""
+    async def analyze_mention_sentiment(self, text: str) -> Dict:
+        """Comprehensive analysis of a single mention"""
         try:
-            # Check cache first
-            if use_cache and self.use_cache:
-                try:
-                    cached_result = await cache_service.get_sentiment_cache(text)
-                    if cached_result:
-                        cached_result['cache_hit'] = True
-                        return cached_result
-                except Exception as e:
-                    logger.warning(f"Cache read failed: {e}")
-            
             # Get text features
             features = self.preprocessor.extract_features(text)
             
-            # Analyze sentiment with best available model (BERT or hybrid)
-            sentiment = await self.sentiment_analyzer.analyze_best_available(text)
+            # Analyze sentiment with hybrid approach
+            sentiment = self.sentiment_analyzer.analyze_hybrid(text)
             
             # Calculate crisis probability
             crisis_prob = await self._calculate_crisis_probability(sentiment, features)
@@ -54,7 +35,7 @@ class MLService:
             # Calculate urgency score
             urgency = self._calculate_urgency_score(sentiment, features)
             
-            result = {
+            return {
                 'sentiment_score': sentiment['sentiment_score'],
                 'sentiment_label': sentiment['sentiment_label'],
                 'confidence': sentiment['confidence'],
@@ -70,75 +51,21 @@ class MLService:
                     'polarity': features['polarity']
                 },
                 'model_info': {
-                    'model': sentiment.get('model', 'hybrid'),
+                    'model': sentiment['model'],
                     'version': self._model_version,
                     'textblob_score': sentiment.get('textblob_score'),
-                    'keyword_score': sentiment.get('keyword_score'),
-                    'bert_details': sentiment.get('bert_details'),
-                    'cache_hit': False
+                    'keyword_score': sentiment.get('keyword_score')
                 }
             }
-            
-            # Cache the result
-            if use_cache and self.use_cache:
-                try:
-                    await cache_service.set_sentiment_cache(text, result)
-                except Exception as e:
-                    logger.warning(f"Cache write failed: {e}")
-            
-            return result
-            
         except Exception as e:
             logger.error(f"ML analysis failed for text '{text[:50]}...': {e}")
             return self._error_response()
     
-    async def batch_analyze_mentions(self, texts: List[str], use_cache: bool = True) -> List[Dict]:
-        """Analyze multiple mentions efficiently with intelligent caching"""
+    async def batch_analyze_mentions(self, texts: List[str]) -> List[Dict]:
+        """Analyze multiple mentions efficiently"""
         try:
-            # For batch processing, handle cache checks efficiently
-            if use_cache and self.use_cache:
-                cached_results = {}
-                uncached_texts = []
-                
-                # Check which texts are already cached
-                for i, text in enumerate(texts):
-                    try:
-                        cached_result = await cache_service.get_sentiment_cache(text)
-                        if cached_result:
-                            cached_result['cache_hit'] = True
-                            cached_results[i] = cached_result
-                        else:
-                            uncached_texts.append((i, text))
-                    except Exception as e:
-                        logger.warning(f"Cache check failed for text {i}: {e}")
-                        uncached_texts.append((i, text))
-                
-                # Process uncached texts
-                uncached_tasks = [
-                    self.analyze_mention_sentiment(text, use_cache=False) 
-                    for _, text in uncached_texts
-                ]
-                uncached_results = await asyncio.gather(*uncached_tasks)
-                
-                # Combine results in original order
-                results = []
-                for i in range(len(texts)):
-                    if i in cached_results:
-                        results.append(cached_results[i])
-                    else:
-                        # Find the corresponding result from uncached_results
-                        uncached_index = next(
-                            idx for idx, (original_idx, _) in enumerate(uncached_texts) 
-                            if original_idx == i
-                        )
-                        results.append(uncached_results[uncached_index])
-                
-                return results
-            else:
-                # No caching - process all
-                tasks = [self.analyze_mention_sentiment(text, use_cache=False) for text in texts]
-                return await asyncio.gather(*tasks)
-                
+            tasks = [self.analyze_mention_sentiment(text) for text in texts]
+            return await asyncio.gather(*tasks)
         except Exception as e:
             logger.error(f"Batch analysis failed: {e}")
             return [self._error_response() for _ in texts]
@@ -215,72 +142,23 @@ class MLService:
         }
     
     async def get_model_info(self) -> Dict:
-        """Get information about loaded models with cache stats"""
-        model_info = {
+        """Get information about loaded models"""
+        return {
             'version': self._model_version,
-            'models': {},
+            'models': {
+                'sentiment': 'Hybrid (TextBlob + Keywords)',
+                'preprocessing': 'NLTK + Custom Rules',
+                'crisis_detection': 'Rule-based Algorithm'
+            },
             'capabilities': [
                 'Sentiment Analysis',
-                'Crisis Detection', 
+                'Crisis Detection',
                 'Urgency Scoring',
-                'Text Feature Extraction',
-                'BERT Integration',
-                'Ensemble Analysis'
+                'Text Feature Extraction'
             ],
             'languages': ['English'],
-            'status': 'active',
-            'cache': {
-                'available': self.use_cache,
-                'stats': {}
-            }
+            'status': 'active'
         }
-        
-        # Get sentiment analyzer info
-        if hasattr(self.sentiment_analyzer, 'bert_analyzer') and self.sentiment_analyzer.bert_analyzer:
-            bert_info = self.sentiment_analyzer.bert_analyzer.get_model_info()
-            model_info['models']['sentiment'] = f"Ensemble (BERT + Hybrid) - {bert_info['model_name']}"
-            model_info['models']['bert'] = bert_info
-        else:
-            model_info['models']['sentiment'] = 'Hybrid (TextBlob + Keywords)'
-        
-        model_info['models']['preprocessing'] = 'NLTK + Custom Rules'
-        model_info['models']['crisis_detection'] = 'Rule-based Algorithm'
-        
-        # Get cache stats
-        if self.use_cache:
-            try:
-                cache_stats = await cache_service.get_cache_stats()
-                model_info['cache']['stats'] = cache_stats
-            except Exception as e:
-                logger.warning(f"Failed to get cache stats: {e}")
-                model_info['cache']['stats'] = {"error": str(e)}
-        
-        return model_info
-    
-    async def clear_cache(self, pattern: str = "*") -> Dict:
-        """Clear ML cache with optional pattern"""
-        if not self.use_cache:
-            return {"success": False, "error": "Cache not available"}
-        
-        try:
-            if pattern == "*":
-                # Clear all ML-related caches
-                sentiment_cleared = await cache_service.invalidate_pattern("sentiment:*")
-                bert_cleared = await cache_service.invalidate_pattern("bert:*")
-                analytics_cleared = await cache_service.invalidate_pattern("analytics:*")
-                
-                total_cleared = sentiment_cleared + bert_cleared + analytics_cleared
-            else:
-                total_cleared = await cache_service.invalidate_pattern(pattern)
-            
-            return {
-                "success": True,
-                "cleared_keys": total_cleared,
-                "pattern": pattern
-            }
-        except Exception as e:
-            logger.error(f"Cache clear failed: {e}")
-            return {"success": False, "error": str(e)}
 
 # Global ML service instance
 ml_service = MLService()
