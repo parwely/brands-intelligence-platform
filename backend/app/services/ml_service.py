@@ -6,7 +6,7 @@ from datetime import datetime
 from ..ml.sentiment.analyzer import SentimentAnalyzer
 from ..ml.sentiment.bert_analyzer import BERTSentimentAnalyzer
 from ..ml.sentiment.crisis_detector import CrisisDetector
-from ..ml.preprocessing.text_cleaner import TextPreprocessor
+# from ..ml.preprocessing.text_cleaner import TextPreprocessor  # Temporarily disabled due to encoding issue
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,9 @@ class MLService:
             self.crisis_detector = None
         
         try:
-            self.preprocessor = TextPreprocessor()
-            logger.info("TextPreprocessor initialized successfully")
+            # self.preprocessor = TextPreprocessor()  # Temporarily disabled
+            self.preprocessor = None
+            logger.info("TextPreprocessor temporarily disabled due to encoding issue")
         except Exception as e:
             logger.error(f"Failed to initialize TextPreprocessor: {e}")
             self.preprocessor = None
@@ -46,7 +47,7 @@ class MLService:
     async def extract_features(self, text: str) -> Dict:
         """Extract comprehensive text features using the preprocessor"""
         try:
-            if self.preprocessor:
+            if self.preprocessor is not None:
                 return await self.preprocessor.extract_features(text)
             else:
                 return self._extract_basic_features(text)
