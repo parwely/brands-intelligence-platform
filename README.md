@@ -4,9 +4,7 @@
 
 Eine Enterprise-Level Plattform, die Social Media, News und Review-Daten in Echtzeit analysiert, um Marken vor Reputationskrisen zu schützen und Marktchancen zu identifizieren.
 
-## 🚀 Current Status: **ML PIPELINE OPERATIONAL** ✅
-
-### ✅ **Phase 3 Complete - Advanced ML Integration**
+###  **Phase 3 Complete - Advanced ML Integration**
 
 - ✅ **Backend API**: FastAPI with SQLite database + 9 ML endpoints
 - ✅ **Frontend Dashboard**: Next.js React app running on port 3000
@@ -120,26 +118,6 @@ brand-intelligence-platform/
 └── README.md                        # 📖 This file
 ```
 
-## 🎯 **Live Features Currently Working**
-
-### **Dashboard Features** 📊
-
-- **Brand Monitoring**: 3 sample brands (TechCorp, GreenEnergy, HealthPlus)
-- **Metrics Cards**: Total mentions, average sentiment, crisis alerts, engagement
-- **Recent Mentions**: Real-time mention feed with sentiment scoring
-- **Brand Selector**: Switch between monitored brands
-- **Responsive Design**: Mobile-friendly TailwindCSS interface
-
-### **🤖 ML Pipeline Features** 🧠
-
-- **Sentiment Analysis**: Keyword-based + BERT transformer models
-- **Crisis Detection**: Multi-level threat assessment (none/minor/major/critical)
-- **Real-time Processing**: Async analysis pipeline with background tasks
-- **Batch Processing**: Analyze multiple mentions simultaneously
-- **Brand Health Scoring**: Comprehensive 0-100 health metrics
-- **Feature Extraction**: Advanced text analysis and keyword detection
-- **BERT Integration**: nlptown/bert-base-multilingual-uncased-sentiment (669MB)
-
 ### **API Endpoints** 🔌
 
 ```bash
@@ -220,13 +198,6 @@ mentions (
 - **React Hooks**: State management with useState/useEffect
 - **Responsive Design**: Mobile-first interface
 
-### **Development Tools** 🔨
-
-- **uvicorn**: ASGI server for FastAPI
-- **npm/Node.js**: Frontend package management
-- **VS Code**: Recommended IDE
-- **Git**: Version control
-
 ## 🗺️ **Development Roadmap**
 
 ### **✅ Phase 1: Foundation (COMPLETED)**
@@ -298,7 +269,7 @@ mentions (
 🚀 Cloud deployment (AWS/GCP)
 ```
 
-## 🧠 **ML Pipeline Architecture (Operational)**
+## 🧠 **ML Pipeline Architecture **
 
 ### **Current Data Pipeline Flow**
 
@@ -308,81 +279,6 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
  "I love this!" → MLService → BERT+Keywords → positive(0.8) → JSON → React UI
  "URGENT Issue" → MLService → Crisis Detect → major(0.7) → Alert → Dashboard
 ```
-
-### **🤖 ML Components (Production Ready)**
-
-1. **✅ Sentiment Analyzer** (Operational)
-
-   - Keyword-based analysis with positive/negative lexicon
-   - Confidence scoring and polarity detection
-   - Crisis indicator integration
-   - Real-time inference capability
-
-2. **✅ BERT Sentiment Analyzer** (Operational)
-
-   - nlptown/bert-base-multilingual-uncased-sentiment transformer
-   - Multi-language support (cached 669MB model)
-   - Confidence scoring with fallback mechanisms
-   - Async processing for high throughput
-
-3. **✅ Crisis Detection** (Operational)
-
-   - Multi-level classification (none/minor/major/critical)
-   - Keyword-based threat assessment
-   - Severity scoring with 0.0-1.0 scale
-   - Brand-specific crisis tracking
-
-4. **✅ ML Service Orchestrator** (Operational)
-
-   - Central coordination of all ML components
-   - Error handling and graceful degradation
-   - Async batch processing capabilities
-   - Feature extraction and text analysis
-
-5. **� Text Preprocessor** (Fallback Mode)
-   - Basic feature extraction (character/word count)
-   - Fallback processing when main preprocessor unavailable
-   - Punctuation and formatting analysis
-   - Ready for advanced NLP pipeline integration
-
-### **📊 ML Performance Metrics**
-
-```bash
-# Sentiment Analysis
-✅ Keyword Analysis: <10ms per mention
-✅ BERT Analysis: 50-200ms per mention (GPU accelerated)
-✅ Crisis Detection: <25ms per mention
-✅ Batch Processing: 100 mentions in ~2-5 seconds
-
-# Model Specifications
-✅ BERT Model: nlptown/bert-base-multilingual-uncased-sentiment
-✅ Model Size: 669MB (cached locally)
-✅ Languages: Multilingual support
-✅ Accuracy: Production-ready sentiment classification
-```
-
-## 🎯 **Next Development Steps**
-
-### **Immediate (Next 1-2 weeks)**
-
-1. **Frontend ML Integration** - Connect dashboard to ML endpoints
-2. **Real-time Crisis Alerts** - Live crisis detection notifications
-3. **Sentiment Trend Charts** - Visualize sentiment over time
-4. **Brand Health Dashboard** - Comprehensive health metrics UI
-
-### **Short-term (Next month)**
-
-1. **Enhanced Crisis Monitoring** - Real-time crisis management interface
-2. **ML Model Optimization** - Performance tuning and caching
-3. **Advanced Visualizations** - Charts and analytics with Chart.js/D3.js
-4. **User Authentication** - Secure access control system
-
-### **Medium-term (Next quarter)**
-
-1. **Real Social Media Integration** - Live Twitter/Reddit API connections
-2. **ML Model Training Pipeline** - Custom model training with MLflow
-3. **Advanced Analytics** - Competitive analysis and trend prediction
-4. **PostgreSQL Migration** - Production-grade database scaling
 
 ## 🔧 **Quick Development Commands**
 
@@ -422,34 +318,7 @@ curl http://localhost:8000/api/demo/sample-data | jq
 - ✅ **⚡ Real-time Processing**: Async ML pipeline with background tasks
 - ✅ **🔧 Production Ready**: Error handling, fallbacks, and comprehensive testing
 
-## 📞 **Getting Help & Resources**
-
-### **API Documentation & Testing**
-
-- **Interactive API Docs**: http://localhost:8000/docs (Swagger UI)
-- **ML Service Status**: http://localhost:8000/ml/status
-- **ML Demo Endpoint**: http://localhost:8000/ml/test/demo
-- **Sample Data**: http://localhost:8000/api/demo/sample-data
-- **Health Check**: http://localhost:8000/health
-
-### **ML Pipeline Testing**
-
-- **Quick ML Demo**: `python simple_ml_demo.py`
-- **Complete API Demo**: `python demo_ml_api.py`
-- **ML Implementation Docs**: `ML_IMPLEMENTATION_SUMMARY.md`
-
-### **Frontend Interface**
-
-- **Main Dashboard**: http://localhost:3000
-- **Brand Monitoring**: Real-time sentiment and crisis tracking
-- **Responsive Design**: Mobile-friendly interface
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with FastAPI, React, and SQLAlchemy
-- Uses TailwindCSS for styling
-- Inspired by enterprise brand monitoring solutions
