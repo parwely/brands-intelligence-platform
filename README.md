@@ -269,8 +269,6 @@ mentions (
 🚀 Cloud deployment (AWS/GCP)
 ```
 
-## 🧠 **ML Pipeline Architecture **
-
 ### **Current Data Pipeline Flow**
 
 ```
@@ -279,45 +277,6 @@ Text Input → ML Service → Analysis → Results → API Response → Dashboar
  "I love this!" → MLService → BERT+Keywords → positive(0.8) → JSON → React UI
  "URGENT Issue" → MLService → Crisis Detect → major(0.7) → Alert → Dashboard
 ```
-
-## 🔧 **Quick Development Commands**
-
-```bash
-# Start complete ML-enabled environment
-make backend-dev    # Start backend with ML pipeline
-make frontend-dev   # Start frontend dashboard
-
-# Test ML functionality
-python simple_ml_demo.py                    # Quick ML demo
-python demo_ml_api.py                       # Complete API demonstration
-python backend/test_ml_complete.py          # Comprehensive ML testing
-
-# ML-specific testing
-curl http://localhost:8000/ml/status         # Check ML service health
-curl http://localhost:8000/ml/test/demo      # Run ML demo endpoint
-
-# Database operations
-python -c "from app.core.init_db import init_database; import asyncio; asyncio.run(init_database())"
-
-# View logs and debug
-tail -f backend/logs/app.log
-curl http://localhost:8000/api/demo/sample-data | jq
-```
-
-## 🎉 **Success Metrics**
-
-- ✅ **Backend API**: Responding on http://localhost:8000 (13 endpoints total)
-- ✅ **Frontend Dashboard**: Loading on http://localhost:3000
-- ✅ **Database**: 3 brands, 9 mentions loaded successfully
-- ✅ **API Communication**: CORS working, data flowing
-- ✅ **UI Components**: Responsive dashboard with metrics
-- ✅ **🤖 ML Pipeline**: 9 ML endpoints operational
-- ✅ **🧠 BERT Model**: nlptown/bert-base-multilingual-uncased-sentiment loaded (669MB)
-- ✅ **🚨 Crisis Detection**: Multi-level threat assessment working
-- ✅ **📊 Sentiment Analysis**: Keyword + BERT hybrid analysis functional
-- ✅ **⚡ Real-time Processing**: Async ML pipeline with background tasks
-- ✅ **🔧 Production Ready**: Error handling, fallbacks, and comprehensive testing
-
 
 ## 📄 License
 
