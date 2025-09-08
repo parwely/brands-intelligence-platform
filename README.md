@@ -1,7 +1,5 @@
 # Brand Intelligence Platform
 
-## "Real-time Brand Monitoring with AI-powered Crisis Detection"
-
 Eine Enterprise-Level Plattform, die Social Media, News und Review-Daten in Echtzeit analysiert, um Marken vor Reputationskrisen zu schützen und Marktchancen zu identifizieren.
 
 ###  **Phase 3 Complete - Advanced ML Integration**
